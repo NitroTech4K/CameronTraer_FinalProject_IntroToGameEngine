@@ -6,7 +6,7 @@ public class TimelineTrigger : MonoBehaviour
 {
    
     public PlayableDirector Entering_Timeline; //Name of the TimeLine slot for the script, visuble in Unity
-    public PlayableDirector Exiting_Timeline;                                        //
+                                     
     public GameObject ObjectToDeactivate1;
 
 
@@ -23,26 +23,16 @@ public class TimelineTrigger : MonoBehaviour
        
 
     {
-            Exiting_Timeline.Stop();
-            Entering_Timeline.Play();   //Reference the "Timeline_Event" in here with ".play();" at the end. 
-            Debug.Log("Player stepped in trigger bounds. The Timeline has be started.");
         
+        Entering_Timeline.Play();   //Reference the "Timeline_Event" in here with ".play();" at the end. 
+            Debug.Log("Player stepped in trigger bounds. The Timeline has be started.");
+        ObjectToDeactivate1.SetActive(false);
     }
 
 
-    //private void OnTriggerExit(Collider other)
-    //{
-    //    Timeline_Event.Stop(); //Stops the timeline from playing when the player steps off the platform
-    //    Debug.Log("Player stepped out of trigger bounds. The Timeline has been stopped");
-    //    ObjectToDeactivate1.SetActive(false);
-    //}
+   
 
-    private void OnTriggerExit(Collider other)
-    { 
-            Entering_Timeline.Stop();
-            Exiting_Timeline.Play();
-            Debug.Log("Player stepped out of trigger bounds. If there is one, the Exit Timeline will now play");
-    }
+     
 
 
     // Update is called once per frame
