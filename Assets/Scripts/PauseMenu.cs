@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using UnityEngine.Playables; // Import the Playables namespace
+using UnityEngine.Playables;
 
 public class PauseScript : MonoBehaviour
 {
@@ -12,7 +12,7 @@ public class PauseScript : MonoBehaviour
     public MonoBehaviour[] scriptsToDisableOnPause;
 
     [SerializeField]
-    private PlayableDirector timeline; // Reference to your timeline
+    private PlayableDirector timeline;
 
     private bool isPaused = false;
     private float originalSlopeLimit;
@@ -32,7 +32,7 @@ public class PauseScript : MonoBehaviour
         {
             originalSlopeLimit = characterController.slopeLimit;
             originalStepOffset = characterController.stepOffset;
-            originalSpeed = 5f; // Replace 5f with your default speed value or set it to a default speed
+            originalSpeed = 5f;
         }
 
         originalCursorLockMode = Cursor.lockState;
@@ -47,23 +47,35 @@ public class PauseScript : MonoBehaviour
         {
             restartButton.onClick.AddListener(RestartGame);
         }
+
+        if (timeline != null)
+        {
+            timeline.played += OnTimelineStart; // Subscribe to the timeline start event
+        }
+    }
+
+    void OnTimelineStart(PlayableDirector director)
+    {
+        UnlockCursor(); // Unlock the cursor when the timeline starts playing
     }
 
     void Update()
     {
-        if (timeline != null && timeline.state != PlayState.Playing)
+        if (timeline != null && timeline.state == PlayState.Playing)
         {
-            // Check for the pause input, using the Escape key
-            if (Input.GetKeyDown(KeyCode.Escape))
+            return; // Do not process input if the timeline is playing
+        }
+
+        // Check for the pause input, using the Escape key
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isPaused)
             {
-                if (isPaused)
-                {
-                    ResumeGame();
-                }
-                else
-                {
-                    PauseGame();
-                }
+                ResumeGame();
+            }
+            else
+            {
+                PauseGame();
             }
         }
     }
@@ -99,12 +111,12 @@ public class PauseScript : MonoBehaviour
         {
             characterController.slopeLimit = originalSlopeLimit;
             characterController.stepOffset = originalStepOffset;
-            characterController.Move(Vector3.zero); // This helps to stop the sliding that might occur after changing the speed
+            characterController.Move(Vector3.zero);
         }
 
         EnableScripts();
 
-        Cursor.lockState = CursorLockMode.Locked; // Ensure the cursor is locked
+        Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
         if (pauseMenuCanvas != null)
@@ -115,8 +127,14 @@ public class PauseScript : MonoBehaviour
 
     void RestartGame()
     {
-        Time.timeScale = 1f; // Ensure that time scale is set to 1 before reloading the scene
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     void DisableScripts()
@@ -132,6 +150,14 @@ public class PauseScript : MonoBehaviour
         foreach (var script in scriptsToDisableOnPause)
         {
             script.enabled = true;
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (timeline != null)
+        {
+            timeline.played -= OnTimelineStart; // Unsubscribe from the timeline start event to prevent memory leaks
         }
     }
 }
