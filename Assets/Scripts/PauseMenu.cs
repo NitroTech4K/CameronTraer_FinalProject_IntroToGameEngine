@@ -8,11 +8,15 @@ public class PauseScript : MonoBehaviour
     public GameObject pauseMenuCanvas;
     public Button resumeButton;
     public Button restartButton;
+    public Button mainMenuButton;
     public CharacterController characterController;
     public MonoBehaviour[] scriptsToDisableOnPause;
 
     [SerializeField]
     private PlayableDirector timeline;
+
+    [SerializeField]
+    private string mainMenuSceneName = "MainMenu"; // Default scene name is "MainMenu"
 
     private bool isPaused = false;
     private float originalSlopeLimit;
@@ -32,7 +36,7 @@ public class PauseScript : MonoBehaviour
         {
             originalSlopeLimit = characterController.slopeLimit;
             originalStepOffset = characterController.stepOffset;
-            originalSpeed = 5f;
+            originalSpeed = 5f; // Replace 5f with your default speed value or set it to a default speed
         }
 
         originalCursorLockMode = Cursor.lockState;
@@ -48,22 +52,19 @@ public class PauseScript : MonoBehaviour
             restartButton.onClick.AddListener(RestartGame);
         }
 
-        if (timeline != null)
+        if (mainMenuButton != null)
         {
-            timeline.played += OnTimelineStart; // Subscribe to the timeline start event
+            mainMenuButton.onClick.AddListener(BackToMainMenu);
         }
-    }
-
-    void OnTimelineStart(PlayableDirector director)
-    {
-        UnlockCursor(); // Unlock the cursor when the timeline starts playing
     }
 
     void Update()
     {
-        if (timeline != null && timeline.state == PlayState.Playing)
+        // Check if the timeline is playing or the game is paused
+        if ((timeline != null && timeline.state == PlayState.Playing) || isPaused)
         {
-            return; // Do not process input if the timeline is playing
+            UnlockCursor(); // Unlock cursor when the timeline is playing or the game is paused
+            return; // Do not process input if the timeline is playing or the game is paused
         }
 
         // Check for the pause input, using the Escape key
@@ -99,6 +100,7 @@ public class PauseScript : MonoBehaviour
         if (pauseMenuCanvas != null)
         {
             pauseMenuCanvas.SetActive(true);
+            UnlockCursor(); // Unlock cursor when the game is paused
         }
     }
 
@@ -131,6 +133,12 @@ public class PauseScript : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
+    void BackToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(mainMenuSceneName); // Use the specified main menu scene name
+    }
+
     void UnlockCursor()
     {
         Cursor.lockState = CursorLockMode.None;
@@ -150,14 +158,6 @@ public class PauseScript : MonoBehaviour
         foreach (var script in scriptsToDisableOnPause)
         {
             script.enabled = true;
-        }
-    }
-
-    void OnDestroy()
-    {
-        if (timeline != null)
-        {
-            timeline.played -= OnTimelineStart; // Unsubscribe from the timeline start event to prevent memory leaks
         }
     }
 }
