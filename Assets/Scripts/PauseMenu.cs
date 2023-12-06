@@ -1,84 +1,89 @@
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using UnityEngine.Playables; // Import the Playables namespace
 
 public class PauseScript : MonoBehaviour
 {
     public GameObject pauseMenuCanvas;
-    public GameObject resumeButton; // Reference to the Resume button in your UI
-    public CharacterController characterController; // Reference to the CharacterController
-    public MonoBehaviour[] scriptsToDisableOnPause; // Add the camera script or any other scripts you want to disable
+    public Button resumeButton;
+    public Button restartButton;
+    public CharacterController characterController;
+    public MonoBehaviour[] scriptsToDisableOnPause;
+
+    [SerializeField]
+    private PlayableDirector timeline; // Reference to your timeline
 
     private bool isPaused = false;
     private float originalSlopeLimit;
     private float originalStepOffset;
+    private float originalSpeed;
     private CursorLockMode originalCursorLockMode;
     private bool originalCursorVisibility;
 
-    // Start is called before the first frame update
     void Start()
     {
-        // Ensure that the pause menu canvas is initially disabled
         if (pauseMenuCanvas != null)
         {
             pauseMenuCanvas.SetActive(false);
         }
 
-        // Store the original values when the script starts
         if (characterController != null)
         {
             originalSlopeLimit = characterController.slopeLimit;
             originalStepOffset = characterController.stepOffset;
+            originalSpeed = 5f; // Replace 5f with your default speed value or set it to a default speed
         }
 
-        // Store the original cursor state
         originalCursorLockMode = Cursor.lockState;
         originalCursorVisibility = Cursor.visible;
 
-        // Set up the Resume button click event
         if (resumeButton != null)
         {
-            resumeButton.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(ResumeGame);
+            resumeButton.onClick.AddListener(ResumeGame);
+        }
+
+        if (restartButton != null)
+        {
+            restartButton.onClick.AddListener(RestartGame);
         }
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // Check for the pause input, using the Escape key
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (timeline != null && timeline.state != PlayState.Playing)
         {
-            if (isPaused)
+            // Check for the pause input, using the Escape key
+            if (Input.GetKeyDown(KeyCode.Escape))
             {
-                ResumeGame();
-            }
-            else
-            {
-                PauseGame();
+                if (isPaused)
+                {
+                    ResumeGame();
+                }
+                else
+                {
+                    PauseGame();
+                }
             }
         }
     }
 
     void PauseGame()
     {
-        // Pause the game
         isPaused = true;
         Time.timeScale = 0f;
 
-        // Disable character controller movement
         if (characterController != null)
         {
-            // Set the values to zero to freeze the character in place
             characterController.slopeLimit = 0f;
             characterController.stepOffset = 0f;
         }
 
-        // Disable specified scripts
         DisableScripts();
 
-        // Unlock the cursor
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // Show the pause menu canvas
         if (pauseMenuCanvas != null)
         {
             pauseMenuCanvas.SetActive(true);
@@ -87,35 +92,35 @@ public class PauseScript : MonoBehaviour
 
     void ResumeGame()
     {
-        // Unpause the game
         isPaused = false;
         Time.timeScale = 1f;
 
-        // Restore character controller values
         if (characterController != null)
         {
-            // Restore the original values
             characterController.slopeLimit = originalSlopeLimit;
             characterController.stepOffset = originalStepOffset;
+            characterController.Move(Vector3.zero); // This helps to stop the sliding that might occur after changing the speed
         }
 
-        // Enable specified scripts
         EnableScripts();
 
-        // Lock the cursor
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.Locked; // Ensure the cursor is locked
         Cursor.visible = false;
 
-        // Hide the pause menu canvas
         if (pauseMenuCanvas != null)
         {
             pauseMenuCanvas.SetActive(false);
         }
     }
 
+    void RestartGame()
+    {
+        Time.timeScale = 1f; // Ensure that time scale is set to 1 before reloading the scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
     void DisableScripts()
     {
-        // Disable specified scripts
         foreach (var script in scriptsToDisableOnPause)
         {
             script.enabled = false;
@@ -124,7 +129,6 @@ public class PauseScript : MonoBehaviour
 
     void EnableScripts()
     {
-        // Enable specified scripts
         foreach (var script in scriptsToDisableOnPause)
         {
             script.enabled = true;
