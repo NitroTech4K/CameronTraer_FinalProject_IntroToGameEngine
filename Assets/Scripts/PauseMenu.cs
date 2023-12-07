@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Playables;
+using System.Collections;
 
 public class PauseScript : MonoBehaviour
 {
@@ -13,7 +14,9 @@ public class PauseScript : MonoBehaviour
     public MonoBehaviour[] scriptsToDisableOnPause;
 
     [SerializeField]
-    private PlayableDirector timeline;
+    private PlayableDirector timeline1; // First timeline
+    [SerializeField]
+    private PlayableDirector timeline2; // Second timeline
 
     [SerializeField]
     private string mainMenuSceneName = "MainMenu"; // Default scene name is "MainMenu"
@@ -61,7 +64,9 @@ public class PauseScript : MonoBehaviour
     void Update()
     {
         // Check if the timeline is playing or the game is paused
-        if ((timeline != null && timeline.state == PlayState.Playing) || isPaused)
+        if ((timeline1 != null && timeline1.state == PlayState.Playing) ||
+            (timeline2 != null && timeline2.state == PlayState.Playing) ||
+            isPaused)
         {
             UnlockCursor(); // Unlock cursor when the timeline is playing or the game is paused
             return; // Do not process input if the timeline is playing or the game is paused
@@ -106,6 +111,11 @@ public class PauseScript : MonoBehaviour
 
     void ResumeGame()
     {
+        if (!isPaused)
+        {
+            return; // Ignore if the game is not paused
+        }
+
         isPaused = false;
         Time.timeScale = 1f;
 
@@ -124,6 +134,23 @@ public class PauseScript : MonoBehaviour
         if (pauseMenuCanvas != null)
         {
             pauseMenuCanvas.SetActive(false);
+
+            // Stop and reset the first timeline if it's playing
+            if (timeline1 != null && timeline1.state == PlayState.Playing)
+            {
+                timeline1.time = 0.0;
+                timeline1.Stop();
+            }
+
+            // Stop and reset the second timeline if it's playing
+            if (timeline2 != null && timeline2.state == PlayState.Playing)
+            {
+                timeline2.time = 0.0;
+                timeline2.Stop();
+            }
+
+            // Manually unlock the cursor after a short delay
+            StartCoroutine(UnlockCursorWithDelay());
         }
     }
 
@@ -159,5 +186,15 @@ public class PauseScript : MonoBehaviour
         {
             script.enabled = true;
         }
+    }
+
+    IEnumerator UnlockCursorWithDelay()
+    {
+        // Add a short delay before unlocking the cursor
+        yield return new WaitForSecondsRealtime(0.1f);
+
+        // Unlock the cursor
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }
