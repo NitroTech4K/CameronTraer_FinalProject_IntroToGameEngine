@@ -163,8 +163,10 @@ public class PauseScript : MonoBehaviour
     void BackToMainMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(mainMenuSceneName); // Use the specified main menu scene name
+        int mainMenuBuildIndex = 0; // Change this to the correct build index of the MainMenu scene
+        SceneManager.LoadScene(mainMenuBuildIndex);
     }
+
 
     void UnlockCursor()
     {
